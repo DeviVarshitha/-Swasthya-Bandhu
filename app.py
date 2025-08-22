@@ -1,10 +1,6 @@
 import os
 import json
-import logging
 from flask import Flask, render_template, request, jsonify, session
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
 
 # Create the app
 app = Flask(__name__)
@@ -22,45 +18,15 @@ def get_ai_response(message):
     """Mock AI response for healthcare chatbot"""
     specialists = {
         'headache': 'Neurologist',
-        'migraine': 'Neurologist',
         'fever': 'General Physician',
-        'cold': 'General Physician',
-        'flu': 'General Physician',
         'chest pain': 'Cardiologist',
-        'heart': 'Cardiologist',
         'stomach': 'Gastroenterologist',
-        'digestion': 'Gastroenterologist',
         'joint': 'Orthopedist',
-        'bone': 'Orthopedist',
-        'fracture': 'Orthopedist',
         'skin': 'Dermatologist',
-        'rash': 'Dermatologist',
-        'acne': 'Dermatologist',
         'eye': 'Ophthalmologist',
-        'vision': 'Ophthalmologist',
         'ear': 'ENT Specialist',
-        'throat': 'ENT Specialist',
-        'nose': 'ENT Specialist',
         'breathing': 'Pulmonologist',
-        'cough': 'Pulmonologist',
-        'asthma': 'Pulmonologist',
-        'kidney': 'Nephrologist',
-        'urine': 'Urologist',
-        'bladder': 'Urologist',
-        'pregnancy': 'Gynecologist',
-        'menstrual': 'Gynecologist',
-        'mental': 'Psychiatrist',
-        'depression': 'Psychiatrist',
-        'anxiety': 'Psychiatrist',
-        'diabetes': 'Endocrinologist',
-        'thyroid': 'Endocrinologist',
-        'hormone': 'Endocrinologist',
-        'cancer': 'Oncologist',
-        'tumor': 'Oncologist',
-        'child': 'Pediatrician',
-        'baby': 'Pediatrician',
-        'elderly': 'Geriatrician',
-        'old age': 'Geriatrician'
+        'heart': 'Cardiologist'
     }
     
     message_lower = message.lower()
@@ -106,13 +72,7 @@ translations = {
         'relationship': 'Relationship',
         'emergency_contact': 'Emergency Contact',
         'back': 'Back',
-        'next': 'Next',
-        'success_registered': 'Successfully Registered!',
-        'success_language': 'Language Selected Successfully!',
-        'error_fill_fields': 'Please fill all required fields',
-        'error_phone_invalid': 'Please enter a valid 10-digit phone number',
-        'select_date': 'Select Date',
-        'available_slots': 'Available Time Slots'
+        'next': 'Next'
     },
     'hindi': {
         'app_title': 'स्वास्थ्य बंधु',
@@ -139,11 +99,7 @@ translations = {
         'relationship': 'रिश्ता',
         'emergency_contact': 'आपातकालीन संपर्क',
         'back': 'वापस',
-        'next': 'अगला',
-        'success_registered': 'सफलतापूर्वक पंजीकृत!',
-        'success_language': 'भाषा सफलतापूर्वक चुनी गई!',
-        'error_fill_fields': 'कृपया सभी आवश्यक फ़ील्ड भरें',
-        'error_phone_invalid': 'कृपया एक वैध 10-अंकीय फोन नंबर दर्ज करें'
+        'next': 'अगला'
     },
     'telugu': {
         'app_title': 'స్వాస్థ్య బంధు',
@@ -170,9 +126,7 @@ translations = {
         'relationship': 'సంబంధం',
         'emergency_contact': 'అత్యవసర పరిచయం',
         'back': 'వెనుకకు',
-        'next': 'తర్వాత',
-        'success_registered': 'విజయవంతంగా నమోదైంది!',
-        'success_language': 'భాష విజయవంతంగా ఎంచుకోబడింది!'
+        'next': 'తర్వాత'
     },
     'kannada': {
         'app_title': 'ಸ್ವಾಸ್ಥ್ಯ ಬಂಧು',
@@ -199,9 +153,7 @@ translations = {
         'relationship': 'ಸಂಬಂಧ',
         'emergency_contact': 'ತುರ್ತು ಸಂಪರ್ಕ',
         'back': 'ಹಿಂದೆ',
-        'next': 'ಮುಂದೆ',
-        'success_registered': 'ಯಶಸ್ವಿಯಾಗಿ ನೋಂದಾಯಿಸಲಾಗಿದೆ!',
-        'success_language': 'ಭಾಷೆ ಯಶಸ್ವಿಯಾಗಿ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ!'
+        'next': 'ಮುಂದೆ'
     },
     'malayalam': {
         'app_title': 'സ്വാസ്ഥ്യ ബന്ധു',
@@ -228,9 +180,7 @@ translations = {
         'relationship': 'ബന്ധം',
         'emergency_contact': 'അടിയന്തര കോൺടാക്റ്റ്',
         'back': 'പിന്നോട്ട്',
-        'next': 'അടുത്തത്',
-        'success_registered': 'വിജയകരമായി രജിസ്റ്റർ ചെയ്തു!',
-        'success_language': 'ഭാഷ വിജയകരമായി തിരഞ്ഞെടുത്തു!'
+        'next': 'അടുത്തത്'
     },
     'tamil': {
         'app_title': 'ஸ்வாஸ்த்யா பந்து',
@@ -257,195 +207,177 @@ translations = {
         'relationship': 'உறவு',
         'emergency_contact': 'அவசர தொடர்பு',
         'back': 'பின்னால்',
-        'next': 'அடுத்து',
-        'success_registered': 'வெற்றிகரமாக பதிவு செய்யப்பட்டது!',
-        'success_language': 'மொழி வெற்றிகரமாக தேர்ந்தெடுக்கப்பட்டது!'
+        'next': 'அடுத்து'
     }
 }
 
-# Sample data initialization with expanded specialties
+# Sample data initialization
 def init_sample_data():
     global doctors_data, caretakers_data
     
-    # Expanded doctors data with 15+ specialties
+    # Sample doctors data
     doctors_data = {
         'Cardiologist': [
             {'id': 1, 'name': 'Dr. Rajesh Sharma', 'experience': 15, 'hospital': 'Apollo Hospital', 'consultation_fee': 500, 'phone_number': '9876543210', 'lat': 17.4065, 'lng': 78.4772},
             {'id': 2, 'name': 'Dr. Priya Reddy', 'experience': 12, 'hospital': 'KIMS Hospital', 'consultation_fee': 600, 'phone_number': '9876543211', 'lat': 17.4075, 'lng': 78.4782}
         ],
         'Neurologist': [
-            {'id': 3, 'name': 'Dr. Amit Kumar', 'experience': 18, 'hospital': 'Yashoda Hospital', 'consultation_fee': 700, 'phone_number': '9876543212', 'lat': 17.4085, 'lng': 78.4792},
-            {'id': 4, 'name': 'Dr. Sunita Singh', 'experience': 14, 'hospital': 'Continental Hospital', 'consultation_fee': 650, 'phone_number': '9876543213', 'lat': 17.4095, 'lng': 78.4802}
+            {'id': 3, 'name': 'Dr. Suresh Kumar', 'experience': 18, 'hospital': 'Care Hospital', 'consultation_fee': 700, 'phone_number': '9876543212', 'lat': 17.4085, 'lng': 78.4792},
+            {'id': 4, 'name': 'Dr. Anita Singh', 'experience': 10, 'hospital': 'Rainbow Hospital', 'consultation_fee': 550, 'phone_number': '9876543213', 'lat': 17.4095, 'lng': 78.4802}
         ],
         'General Physician': [
-            {'id': 5, 'name': 'Dr. Ramesh Patel', 'experience': 10, 'hospital': 'City Hospital', 'consultation_fee': 300, 'phone_number': '9876543214', 'lat': 17.4055, 'lng': 78.4762},
-            {'id': 6, 'name': 'Dr. Kavitha Rao', 'experience': 8, 'hospital': 'Care Hospital', 'consultation_fee': 350, 'phone_number': '9876543215', 'lat': 17.4105, 'lng': 78.4812}
+            {'id': 5, 'name': 'Dr. Ramesh Gupta', 'experience': 8, 'hospital': 'City Hospital', 'consultation_fee': 300, 'phone_number': '9876543214', 'lat': 17.4105, 'lng': 78.4812},
+            {'id': 6, 'name': 'Dr. Kavitha Rao', 'experience': 12, 'hospital': 'Metro Hospital', 'consultation_fee': 350, 'phone_number': '9876543215', 'lat': 17.4115, 'lng': 78.4822}
         ],
         'Gastroenterologist': [
-            {'id': 7, 'name': 'Dr. Mahesh Gupta', 'experience': 16, 'hospital': 'Apollo Hospital', 'consultation_fee': 550, 'phone_number': '9876543216', 'lat': 17.4115, 'lng': 78.4822},
-            {'id': 8, 'name': 'Dr. Ritu Sharma', 'experience': 11, 'hospital': 'KIMS Hospital', 'consultation_fee': 500, 'phone_number': '9876543217', 'lat': 17.4125, 'lng': 78.4832}
+            {'id': 7, 'name': 'Dr. Ramesh Gupta', 'experience': 8, 'hospital': 'City Hospital', 'consultation_fee': 300, 'phone_number': '9876543214', 'lat': 17.4105, 'lng': 78.4812},
+            {'id': 8, 'name': 'Dr. Kavitha Rao', 'experience': 12, 'hospital': 'Metro Hospital', 'consultation_fee': 350, 'phone_number': '9876543215', 'lat': 17.4115, 'lng': 78.4822}
         ],
-        'Orthopedist': [
-            {'id': 9, 'name': 'Dr. Suresh Reddy', 'experience': 20, 'hospital': 'Yashoda Hospital', 'consultation_fee': 600, 'phone_number': '9876543218', 'lat': 17.4135, 'lng': 78.4842},
-            {'id': 10, 'name': 'Dr. Meera Joshi', 'experience': 13, 'hospital': 'Continental Hospital', 'consultation_fee': 550, 'phone_number': '9876543219', 'lat': 17.4145, 'lng': 78.4852}
+        'Hepatologist': [
+            {'id': 9, 'name': 'Dr. Anil Kumar', 'experience': 10, 'hospital': 'Global Hospital', 'consultation_fee': 600, 'phone_number': '9876543216', 'lat': 17.4125, 'lng': 78.4832},
+            {'id': 10, 'name': 'Dr. Meera Rani', 'experience': 15, 'hospital': 'Max Hospital', 'consultation_fee': 700, 'phone_number': '9876543217', 'lat': 17.4135, 'lng': 78.4842}
         ],
         'Dermatologist': [
-            {'id': 11, 'name': 'Dr. Anita Verma', 'experience': 9, 'hospital': 'City Hospital', 'consultation_fee': 400, 'phone_number': '9876543220', 'lat': 17.4155, 'lng': 78.4862},
-            {'id': 12, 'name': 'Dr. Rajesh Kumar', 'experience': 15, 'hospital': 'Care Hospital', 'consultation_fee': 450, 'phone_number': '9876543221', 'lat': 17.4165, 'lng': 78.4872}
-        ],
-        'Ophthalmologist': [
-            {'id': 13, 'name': 'Dr. Vijay Agarwal', 'experience': 17, 'hospital': 'Apollo Hospital', 'consultation_fee': 500, 'phone_number': '9876543222', 'lat': 17.4175, 'lng': 78.4882},
-            {'id': 14, 'name': 'Dr. Pooja Mehta', 'experience': 12, 'hospital': 'KIMS Hospital', 'consultation_fee': 450, 'phone_number': '9876543223', 'lat': 17.4185, 'lng': 78.4892}
-        ],
-        'ENT Specialist': [
-            {'id': 15, 'name': 'Dr. Ashok Nair', 'experience': 14, 'hospital': 'Yashoda Hospital', 'consultation_fee': 400, 'phone_number': '9876543224', 'lat': 17.4195, 'lng': 78.4902},
-            {'id': 16, 'name': 'Dr. Sneha Patil', 'experience': 10, 'hospital': 'Continental Hospital', 'consultation_fee': 450, 'phone_number': '9876543225', 'lat': 17.4205, 'lng': 78.4912}
-        ],
-        'Pulmonologist': [
-            {'id': 17, 'name': 'Dr. Rakesh Yadav', 'experience': 16, 'hospital': 'City Hospital', 'consultation_fee': 550, 'phone_number': '9876543226', 'lat': 17.4215, 'lng': 78.4922},
-            {'id': 18, 'name': 'Dr. Shweta Iyer', 'experience': 11, 'hospital': 'Care Hospital', 'consultation_fee': 500, 'phone_number': '9876543227', 'lat': 17.4225, 'lng': 78.4932}
-        ],
-        'Nephrologist': [
-            {'id': 19, 'name': 'Dr. Mohan Das', 'experience': 18, 'hospital': 'Apollo Hospital', 'consultation_fee': 600, 'phone_number': '9876543228', 'lat': 17.4235, 'lng': 78.4942},
-            {'id': 20, 'name': 'Dr. Lakshmi Pillai', 'experience': 13, 'hospital': 'KIMS Hospital', 'consultation_fee': 550, 'phone_number': '9876543229', 'lat': 17.4245, 'lng': 78.4952}
-        ],
-        'Urologist': [
-            {'id': 21, 'name': 'Dr. Arun Chakraborty', 'experience': 15, 'hospital': 'Yashoda Hospital', 'consultation_fee': 600, 'phone_number': '9876543230', 'lat': 17.4255, 'lng': 78.4962},
-            {'id': 22, 'name': 'Dr. Nisha Agarwal', 'experience': 10, 'hospital': 'Continental Hospital', 'consultation_fee': 550, 'phone_number': '9876543231', 'lat': 17.4265, 'lng': 78.4972}
-        ],
-        'Gynecologist': [
-            {'id': 23, 'name': 'Dr. Shalini Jain', 'experience': 17, 'hospital': 'City Hospital', 'consultation_fee': 500, 'phone_number': '9876543232', 'lat': 17.4275, 'lng': 78.4982},
-            {'id': 24, 'name': 'Dr. Ranjana Singh', 'experience': 19, 'hospital': 'Care Hospital', 'consultation_fee': 600, 'phone_number': '9876543233', 'lat': 17.4285, 'lng': 78.4992}
-        ],
-        'Psychiatrist': [
-            {'id': 25, 'name': 'Dr. Vikram Bhatt', 'experience': 14, 'hospital': 'Apollo Hospital', 'consultation_fee': 700, 'phone_number': '9876543234', 'lat': 17.4295, 'lng': 78.5002},
-            {'id': 26, 'name': 'Dr. Deepa Krishnan', 'experience': 12, 'hospital': 'KIMS Hospital', 'consultation_fee': 650, 'phone_number': '9876543235', 'lat': 17.4305, 'lng': 78.5012}
-        ],
-        'Endocrinologist': [
-            {'id': 27, 'name': 'Dr. Harish Chand', 'experience': 16, 'hospital': 'Yashoda Hospital', 'consultation_fee': 600, 'phone_number': '9876543236', 'lat': 17.4315, 'lng': 78.5022},
-            {'id': 28, 'name': 'Dr. Priyanka Soni', 'experience': 11, 'hospital': 'Continental Hospital', 'consultation_fee': 550, 'phone_number': '9876543237', 'lat': 17.4325, 'lng': 78.5032}
-        ],
-        'Oncologist': [
-            {'id': 29, 'name': 'Dr. Subhash Kaul', 'experience': 22, 'hospital': 'City Hospital', 'consultation_fee': 800, 'phone_number': '9876543238', 'lat': 17.4335, 'lng': 78.5042},
-            {'id': 30, 'name': 'Dr. Manjula Devi', 'experience': 18, 'hospital': 'Care Hospital', 'consultation_fee': 750, 'phone_number': '9876543239', 'lat': 17.4345, 'lng': 78.5052}
-        ],
-        'Pediatrician': [
-            {'id': 31, 'name': 'Dr. Rajiv Saxena', 'experience': 15, 'hospital': 'Apollo Hospital', 'consultation_fee': 400, 'phone_number': '9876543240', 'lat': 17.4355, 'lng': 78.5062},
-            {'id': 32, 'name': 'Dr. Kavya Menon', 'experience': 9, 'hospital': 'KIMS Hospital', 'consultation_fee': 350, 'phone_number': '9876543241', 'lat': 17.4365, 'lng': 78.5072}
-        ],
-        'Geriatrician': [
-            {'id': 33, 'name': 'Dr. Satish Reddy', 'experience': 20, 'hospital': 'Yashoda Hospital', 'consultation_fee': 500, 'phone_number': '9876543242', 'lat': 17.4375, 'lng': 78.5082},
-            {'id': 34, 'name': 'Dr. Usha Rani', 'experience': 16, 'hospital': 'Continental Hospital', 'consultation_fee': 450, 'phone_number': '9876543243', 'lat': 17.4385, 'lng': 78.5092}
+            {'id': 11, 'name': 'Dr. Sneha Iyer', 'experience': 9, 'hospital': 'Skin Care Clinic', 'consultation_fee': 400, 'phone_number': '9876543218', 'lat': 17.4145, 'lng': 78.4852},
+            {'id': 12, 'name': 'Dr. Vikram Singh', 'experience': 11, 'hospital': 'Derma Health Center', 'consultation_fee': 450, 'phone_number': '9876543219', 'lat': 17.4155, 'lng': 78.4862}
         ]
     }
     
     # Sample caretakers data
     caretakers_data = [
-        {'id': 101, 'name': 'Ramesh Caretaker Services', 'experience': 8, 'service_type': 'Home Care', 'hourly_rate': 150, 'phone_number': '9876543300', 'lat': 17.4065, 'lng': 78.4772},
-        {'id': 102, 'name': 'Skilled Nursing Care', 'experience': 12, 'service_type': 'Medical Care', 'hourly_rate': 200, 'phone_number': '9876543301', 'lat': 17.4075, 'lng': 78.4782},
-        {'id': 103, 'name': 'Elder Care Solutions', 'experience': 15, 'service_type': 'Elderly Care', 'hourly_rate': 180, 'phone_number': '9876543302', 'lat': 17.4085, 'lng': 78.4792}
+        {'id': 1, 'name': 'Mrs. Lakshmi Devi', 'specialization': 'Elderly Care', 'experience': 5, 'hourly_rate': 150, 'phone_number': '9876543220'},
+        {'id': 2, 'name': 'Mr. Ravi Kumar', 'specialization': 'Patient Care', 'experience': 7, 'hourly_rate': 200, 'phone_number': '9876543221'},
+        {'id': 3, 'name': 'Mrs. Sunitha Reddy', 'specialization': 'Post-Surgery Care', 'experience': 8, 'hourly_rate': 250, 'phone_number': '9876543222'}
     ]
 
-init_sample_data()
-
+# Routes
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/init_sample_data')
+def init_sample_data_route():
+    init_sample_data()
+    return jsonify({'success': True, 'message': 'Sample data initialized'})
+
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    username = data.get('username', '').strip()
-    phone_number = data.get('phone_number', '').strip()
+    data = request.json
+    username = data.get('username')
+    phone_number = data.get('phone_number')
     
-    # Validation
     if not username or not phone_number:
-        return jsonify({'success': False, 'message': 'Please fill all required fields'}), 400
+        return jsonify({'success': False, 'message': 'Username and phone number are required'})
     
-    if not phone_number.isdigit() or len(phone_number) != 10:
-        return jsonify({'success': False, 'message': 'Please enter a valid 10-digit phone number'}), 400
+    if len(phone_number) != 10 or not phone_number.isdigit():
+        return jsonify({'success': False, 'message': 'Phone number must be 10 digits'})
     
-    # Store user data
     user_id = len(users) + 1
     users[user_id] = {
+        'id': user_id,
         'username': username,
-        'phone_number': phone_number
+        'phone_number': phone_number,
+        'language': 'english'
     }
     
     session['user_id'] = user_id
-    session['username'] = username
-    
-    return jsonify({'success': True, 'message': 'Successfully registered!'})
+    return jsonify({'success': True, 'message': 'Registration successful'})
 
 @app.route('/set_language', methods=['POST'])
 def set_language():
-    data = request.get_json()
+    data = request.json
     language = data.get('language', 'english')
+    
+    user_id = session.get('user_id')
+    if user_id and user_id in users:
+        users[user_id]['language'] = language
+    
     session['language'] = language
-    return jsonify({'success': True, 'message': 'Language selected successfully!'})
+    return jsonify({'success': True})
 
 @app.route('/get_translations/<language>')
 def get_translations(language):
-    return jsonify({'translations': translations.get(language, translations['english'])})
+    return jsonify({
+        'success': True,
+        'translations': translations.get(language, translations['english'])
+    })
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    data = request.get_json()
+    data = request.json
     message = data.get('message', '')
     
-    if not message:
-        return jsonify({'success': False, 'message': 'Message cannot be empty'}), 400
+    user_id = session.get('user_id', 1)
     
-    # Get AI response
-    response, specialist = get_ai_response(message)
-    
-    # Store chat history
-    user_id = session.get('user_id')
-    if user_id:
+    try:
+        response, specialist = get_ai_response(message)
+        
         if user_id not in chat_history:
             chat_history[user_id] = []
+        
         chat_history[user_id].append({
-            'user_message': message,
-            'ai_response': response,
+            'user': message,
+            'ai': response,
             'specialist': specialist
         })
-    
-    return jsonify({
-        'success': True,
-        'response': response,
-        'specialist': specialist
-    })
+        
+        return jsonify({
+            'success': True,
+            'response': response,
+            'recommended_specialist': specialist
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        })
 
 @app.route('/get_doctors/<specialist>')
 def get_doctors(specialist):
     doctors = doctors_data.get(specialist, [])
-    return jsonify({'doctors': doctors})
+    return jsonify({
+        'success': True,
+        'doctors': doctors
+    })
+
+@app.route('/get_doctor_location/<int:doctor_id>')
+def get_doctor_location(doctor_id):
+    for specialist_doctors in doctors_data.values():
+        for doctor in specialist_doctors:
+            if doctor['id'] == doctor_id:
+                return jsonify({
+                    'success': True,
+                    'doctor': doctor
+                })
+    
+    return jsonify({
+        'success': False,
+        'message': 'Doctor not found'
+    })
 
 @app.route('/get_caretakers')
 def get_caretakers():
-    return jsonify({'caretakers': caretakers_data})
+    return jsonify({
+        'success': True,
+        'caretakers': caretakers_data
+    })
 
 @app.route('/add_family_member', methods=['POST'])
 def add_family_member():
-    data = request.get_json()
-    user_id = session.get('user_id')
+    data = request.json
+    user_id = session.get('user_id', 1)
     
-    if not user_id:
-        return jsonify({'success': False, 'message': 'User not logged in'}), 401
-    
-    name = data.get('name', '').strip()
-    phone_number = data.get('phone_number', '').strip()
-    relationship = data.get('relationship', '').strip()
+    name = data.get('name')
+    phone_number = data.get('phone_number')
+    relationship = data.get('relationship')
     is_emergency_contact = data.get('is_emergency_contact', False)
     
-    # Validation
     if not name or not phone_number or not relationship:
-        return jsonify({'success': False, 'message': 'Please fill all required fields'}), 400
+        return jsonify({'success': False, 'message': 'All fields are required'})
     
-    if not phone_number.isdigit() or len(phone_number) != 10:
-        return jsonify({'success': False, 'message': 'Please enter a valid 10-digit phone number'}), 400
+    if len(phone_number) != 10 or not phone_number.isdigit():
+        return jsonify({'success': False, 'message': 'Phone number must be 10 digits'})
     
-    # Store family member
     if user_id not in family_members:
         family_members[user_id] = []
     
@@ -458,34 +390,16 @@ def add_family_member():
         'is_emergency_contact': is_emergency_contact
     })
     
-    return jsonify({'success': True, 'message': 'Family member added successfully!'})
+    return jsonify({'success': True, 'message': 'Family member added successfully'})
 
 @app.route('/get_family_members')
 def get_family_members():
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({'success': False, 'message': 'User not logged in'}), 401
-    
+    user_id = session.get('user_id', 1)
     members = family_members.get(user_id, [])
-    return jsonify({'family_members': members})
-
-@app.route('/book_appointment', methods=['POST'])
-def book_appointment():
-    data = request.get_json()
-    doctor_id = data.get('doctor_id')
-    appointment_date = data.get('date')
-    appointment_time = data.get('time')
-    
-    if not doctor_id or not appointment_date or not appointment_time:
-        return jsonify({'success': False, 'message': 'Please select date and time'}), 400
-    
-    # Here you would typically store the appointment in a database
-    # For this demo, we'll just return success
-    
     return jsonify({
-        'success': True, 
-        'message': f'Appointment booked successfully for {appointment_date} at {appointment_time}'
+        'success': True,
+        'family_members': members
     })
 
-if __name__ == '__main__':
+if __name__ == '_main_':
     app.run(host='0.0.0.0', port=5000, debug=True)

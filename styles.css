@@ -127,22 +127,6 @@ body {
     box-shadow: 0 0 0 3px rgba(46, 139, 87, 0.1);
 }
 
-.form-input.is-invalid {
-    border-color: var(--emergency-color);
-    background: #FFE6E6;
-}
-
-.invalid-feedback {
-    display: none;
-    color: var(--emergency-color);
-    font-size: 0.875rem;
-    margin-top: 5px;
-}
-
-.form-input.is-invalid + .invalid-feedback {
-    display: block;
-}
-
 /* Button Styles */
 .btn {
     padding: 15px 30px;
@@ -188,12 +172,6 @@ body {
 .btn-secondary:hover {
     transform: translateY(-2px);
     background: linear-gradient(135deg, #7F8C8D, #6C7B7D);
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none !important;
 }
 
 /* Language Selection */
@@ -411,38 +389,6 @@ body {
     border-radius: 15px;
 }
 
-/* Enhanced Booking Modal */
-.time-slot-btn {
-    min-width: 80px;
-}
-
-.time-slot-btn.btn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-#appointmentDate {
-    cursor: pointer;
-}
-
-/* Toast Styles */
-.toast-container {
-    z-index: 9999;
-}
-
-.toast {
-    border: none;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-
-.toast-header.bg-success {
-    background: var(--success-color) !important;
-}
-
-.toast-header.bg-danger {
-    background: var(--emergency-color) !important;
-}
-
 /* Animations */
 @keyframes pulse {
     0% {
@@ -550,26 +496,15 @@ body {
     border: 1px solid #B6D7B6;
 }
 
-/* Form Validation Visual Feedback */
-.form-input:invalid:not(:focus):not(:placeholder-shown) {
-    border-color: var(--emergency-color);
-    background: #FFE6E6;
-}
-
-.form-input:valid:not(:focus):not(:placeholder-shown) {
-    border-color: var(--success-color);
-    background: #E8F5E8;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
-        padding: 20px;
         margin: 10px;
+        padding: 30px 20px;
     }
     
     .app-title {
-        font-size: 2rem;
+        font-size: 2.5rem;
     }
     
     .doctor-grid {
@@ -578,37 +513,5 @@ body {
     
     .language-grid {
         grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .emergency-call-btn {
-        font-size: 1.2rem;
-        padding: 15px 30px;
-    }
-    
-    .nav-btn {
-        padding: 10px 20px;
-        font-size: 14px;
-    }
-}
-
-@media (max-width: 480px) {
-    .navigation {
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-    }
-    
-    .screen {
-        padding: 10px;
-    }
-    
-    .logo {
-        width: 80px;
-        height: 80px;
-        font-size: 2rem;
-    }
-    
-    .app-title {
-        font-size: 1.8rem;
     }
 }

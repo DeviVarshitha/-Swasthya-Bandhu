@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const screens = Array.from(document.querySelectorAll(".screen"));
   const backBtn = document.querySelector(".back-btn");
   const nextBtn = document.querySelector(".next-btn");
-  const navigation = document.getElementById("navigation");
   const registerForm = document.getElementById("register-form");
   const languageButtons = document.querySelectorAll(".language-btn");
   const chatForm = document.getElementById("chat-form");
@@ -18,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sosBtn = document.querySelector(".sos-btn");
   const familyViewBtn = document.querySelector(".family-view-btn");
 
-  // Screen index helpers
+  // Screen index helpers (don’t rely on hardcoded order)
   const idx = (id) => screens.findIndex(s => s.id === id);
   const SPLASH = idx("splash-screen");
   const REGISTER = idx("register-screen");
@@ -36,15 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentTranslations = {};
   let doctorsCache = [];
   let selectedDoctor = null;
-  let selectedDate = null;
-  let selectedTime = null;
-  let calendar = null;
-
-  // Form validation states
-  const formStates = {
-    register: false,
-    language: false
-  };
 
   // Triage flow after first AI response
   const triage = {
@@ -65,25 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateNavButtons() {
-    // Hide navigation on splash screen
-    if (currentIndex === SPLASH) {
-      navigation.style.display = 'none';
-      return;
-    } else {
-      navigation.style.display = 'flex';
-    }
-
     backBtn.disabled = currentIndex === 0;
-    
-    // Disable next button based on form validation
-    let canProceed = true;
-    if (currentIndex === REGISTER && !formStates.register) {
-      canProceed = false;
-    } else if (currentIndex === LANGUAGE && !formStates.language) {
-      canProceed = false;
-    }
-    
-    nextBtn.disabled = currentIndex === screens.length - 1 || !canProceed;
+    nextBtn.disabled = currentIndex === screens.length - 1;
   }
 
   function jumpTo(id) {
@@ -96,99 +69,43 @@ document.addEventListener("DOMContentLoaded", () => {
     el.innerHTML = html;
   }
 
-  // ---------- TOAST MESSAGES ----------
-  function showSuccessToast(message) {
-    const toastEl = document.getElementById('successToast');
-    const messageEl = document.getElementById('toastMessage');
-    messageEl.textContent = message;
-    const toast = new bootstrap.Toast(toastEl);
-    toast.show();
-  }
-
-  function showErrorToast(message) {
-    const toastEl = document.getElementById('errorToast');
-    const messageEl = document.getElementById('errorToastMessage');
-    messageEl.textContent = message;
-    const toast = new bootstrap.Toast(toastEl);
-    toast.show();
-  }
-
-  // ---------- FORM VALIDATION ----------
-  function validateForm(form) {
-    let isValid = true;
-    const inputs = form.querySelectorAll('input[required], select[required]');
-    
-    inputs.forEach(input => {
-      input.classList.remove('is-invalid');
-      
-      if (!input.value.trim()) {
-        input.classList.add('is-invalid');
-        isValid = false;
-      } else if (input.type === 'tel' && input.pattern) {
-        const regex = new RegExp(input.pattern);
-        if (!regex.test(input.value)) {
-          input.classList.add('is-invalid');
-          isValid = false;
-        }
-      }
-    });
-    
-    return isValid;
-  }
-
-  function setupFormValidation(form, stateKey) {
-    const inputs = form.querySelectorAll('input, select');
-    
-    inputs.forEach(input => {
-      input.addEventListener('input', () => {
-        formStates[stateKey] = validateForm(form);
-        updateNavButtons();
-      });
-    });
-  }
-
   // ---------- TRANSLATIONS ----------
   async function applyLanguage(lang) {
     currentLanguage = lang;
-    
-    try {
-      // Persist on session
-      await fetch("/set_language", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ language: lang })
-      });
+    // Persist on session
+    await fetch("/set_language", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ language: lang })
+    }).catch(()=>{});
 
-      // Pull translations
-      const res = await fetch(`/get_translations/${lang}`);
-      const data = await res.json();
-      currentTranslations = (data && data.translations) ? data.translations : {};
+    // Pull translations
+    const res = await fetch(`/get_translations/${lang}`);
+    const data = await res.json();
+    currentTranslations = (data && data.translations) ? data.translations : {};
 
-      // Apply to all [data-translate] nodes
-      document.querySelectorAll("[data-translate]").forEach(node => {
-        const key = node.getAttribute("data-translate");
-        const val = currentTranslations[key];
-        if (!val) return;
+    // Apply to all [data-translate] nodes
+    document.querySelectorAll("[data-translate]").forEach(node => {
+      const key = node.getAttribute("data-translate");
+      const val = currentTranslations[key];
+      if (!val) return;
 
-        // Input-like: update placeholder
-        if (node.tagName === "INPUT" || node.tagName === "TEXTAREA") {
-          node.placeholder = val;
-        } else {
-          node.textContent = val;
-        }
-      });
+      // Input-like: update placeholder
+      if (node.tagName === "INPUT" || node.tagName === "TEXTAREA") {
+        node.placeholder = val;
+      } else {
+        node.textContent = val;
+      }
+    });
 
-      setVoiceForLanguage(currentLanguage);
-      showSuccessToast(currentTranslations.success_language || 'Language selected successfully!');
-      
-    } catch (error) {
-      showErrorToast('Failed to set language');
-    }
+    // Re-speak some fixed phrases in target language voice
+    setVoiceForLanguage(currentLanguage);
   }
 
   // ---------- SPEECH: Synthesis (TTS) ----------
   let selectedVoice = null;
   function getLangCodeFor(lang) {
+    // Recognition/Synthesis BCP-47 codes
     const map = {
       english: "en-IN",
       hindi: "hi-IN",
@@ -201,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function chooseBestVoice(langCode) {
+    // Try to choose a female voice in chosen language
     const voices = window.speechSynthesis.getVoices() || [];
     const primary = voices.find(v => v.lang.toLowerCase().startsWith(langCode.toLowerCase()) && /female|woman|zira|synthesizer/i.test(v.name));
     const anyLang = voices.find(v => v.lang.toLowerCase().startsWith(langCode.toLowerCase()));
@@ -292,6 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
       aiSay(triageQuestions[triage.stage]);
     } else {
       triage.active = false;
+      // Summarize and move to doctors
       aiSay("Thanks. Let me find the best nearby doctors for you.");
       loadDoctorsForSpecialist(triage.specialist);
     }
@@ -317,6 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Optionally add a utility bar
     const utility = `
       <div class="mb-2" style="text-align:right">
         <button class="btn btn-secondary" id="btn-view-map">View on Map</button>
@@ -352,7 +272,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (doc) openBookingModal(doc);
       });
     });
-
     doctorsListEl.querySelectorAll(".btn-map").forEach(btn => {
       btn.addEventListener("click", () => {
         const id = parseInt(btn.dataset.id);
@@ -379,444 +298,398 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- ENHANCED BOOKING WITH CALENDAR ----------
+  // ---------- BOOKING ----------
+  function ensureBookingModal() {
+    if (document.getElementById("bookingModal")) return;
+
+    const modalHTML = `
+      <div class="modal fade" id="bookingModal" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Book Appointment</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div id="bookingDoctorInfo" class="mb-3"></div>
+              <div id="bookingSlots"></div>
+              <div id="bookingStatus" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+  }
+
+  function slotTimes() {
+    // 30-min slots from 10:00 to 18:00
+    const slots = [];
+    let h = 10, m = 0;
+    while (h < 18 || (h === 18 && m === 0)) {
+      const hh = String(h).padStart(2,"0");
+      const mm = String(m).padStart(2,"0");
+      slots.push(`${hh}:${mm}`);
+      m += 30;
+      if (m >= 60) { h += 1; m = 0; }
+      if (h === 18 && m > 0) break;
+    }
+    return slots;
+  }
+
   function openBookingModal(doc) {
-    const modal = document.getElementById('bookingModal');
-    const info = document.getElementById('bookingDoctorInfo');
-    const confirmBtn = document.getElementById('confirmBooking');
-    
-    selectedDoctor = doc;
-    selectedDate = null;
-    selectedTime = null;
-    
+    ensureBookingModal();
+    const info = document.getElementById("bookingDoctorInfo");
+    const slotsEl = document.getElementById("bookingSlots");
+    const status = document.getElementById("bookingStatus");
+
     setStatus(info, `
       <div><strong>${doc.name}</strong> — ${doc.hospital}</div>
       <div>Consultation fee: ₹${doc.consultation_fee}</div>
     `);
 
-    // Initialize calendar if not already done
-    if (!calendar) {
-      calendar = flatpickr("#appointmentDate", {
-        minDate: "today",
-        maxDate: new Date().fp_incr(30), // 30 days from today
-        dateFormat: "Y-m-d",
-        onChange: function(selectedDates, dateStr) {
-          selectedDate = dateStr;
-          loadTimeSlots();
-          updateConfirmButton();
-        }
-      });
-    }
+    const grid = slotTimes().map(t =>
+      `<button class="btn btn-primary m-1 btn-slot" data-time="${t}">${t}</button>`
+    ).join("");
 
-    // Reset form
-    calendar.clear();
-    document.getElementById('timeSlots').innerHTML = '';
-    confirmBtn.disabled = true;
+    setStatus(slotsEl, `<div class="d-flex flex-wrap">${grid}</div>`);
+    setStatus(status, "");
 
-    const modalInstance = new bootstrap.Modal(modal);
-    modalInstance.show();
-  }
-
-  function loadTimeSlots() {
-    const slotsEl = document.getElementById('timeSlots');
-    const slots = generateTimeSlots();
-    
-    const slotsHTML = slots.map(slot => 
-      `<button class="btn btn-outline-primary btn-sm me-2 mb-2 time-slot-btn" data-time="${slot}">${slot}</button>`
-    ).join('');
-    
-    slotsEl.innerHTML = slotsHTML;
-    
-    // Add event listeners to time slot buttons
-    slotsEl.querySelectorAll('.time-slot-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Remove active class from all buttons
-        slotsEl.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('btn-primary'));
-        slotsEl.querySelectorAll('.time-slot-btn').forEach(b => b.classList.add('btn-outline-primary'));
-        
-        // Add active class to clicked button
-        btn.classList.remove('btn-outline-primary');
-        btn.classList.add('btn-primary');
-        
-        selectedTime = btn.dataset.time;
-        updateConfirmButton();
+    slotsEl.querySelectorAll(".btn-slot").forEach(btn => {
+      btn.addEventListener("click", () => {
+        setStatus(status, `<div class="success-message">✅ Appointment booked with <strong>${doc.name}</strong> at <strong>${btn.dataset.time}</strong>.</div>`);
+        speak(`Your appointment is booked at ${btn.dataset.time}.`);
       });
     });
-  }
 
-  function generateTimeSlots() {
-    const slots = [];
-    let hour = 9; // Start from 9 AM
-    let minute = 0;
-    
-    while (hour < 18) { // Until 6 PM
-      const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      slots.push(timeStr);
-      
-      minute += 30;
-      if (minute >= 60) {
-        hour++;
-        minute = 0;
-      }
-    }
-    
-    return slots;
-  }
-
-  function updateConfirmButton() {
-    const confirmBtn = document.getElementById('confirmBooking');
-    confirmBtn.disabled = !selectedDate || !selectedTime;
+    const modalEl = document.getElementById("bookingModal");
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
   }
 
   // ---------- MAP ----------
-  let map = null;
-  function renderMap(doctors, focusDoctor = null) {
-    const mapEl = document.getElementById("doctor-map");
-    if (!mapEl) return;
+  let map, mapMarkers = [];
+  function ensureMap() {
+    if (map) return;
+    map = L.map("doctor-map");
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+    map.setView([17.4065, 78.4772], 12);
+  }
 
-    if (map) {
-      map.remove();
+  function clearMarkers() {
+    mapMarkers.forEach(m => m.remove());
+    mapMarkers = [];
+  }
+
+  function renderMap(list, highlightDoctor) {
+    ensureMap();
+    clearMarkers();
+    if (!list || list.length === 0) {
+      map.setView([17.4065, 78.4772], 12);
+      return;
     }
 
-    const defaultLat = focusDoctor ? focusDoctor.lat : 17.4065;
-    const defaultLng = focusDoctor ? focusDoctor.lng : 78.4772;
-
-    map = L.map(mapEl).setView([defaultLat, defaultLng], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    doctors.forEach(doc => {
-      const marker = L.marker([doc.lat, doc.lng]).addTo(map);
-      marker.bindPopup(`
-        <div>
-          <strong>${doc.name}</strong><br>
-          ${doc.hospital}<br>
-          Fee: ₹${doc.consultation_fee}<br>
-          <button onclick="window.open('tel:${doc.phone_number}')" class="btn btn-sm btn-primary mt-1">Call</button>
-        </div>
-      `);
+    const bounds = [];
+    list.forEach(d => {
+      const marker = L.marker([d.lat, d.lng]).addTo(map);
+      const html = `
+        <div style="min-width:200px">
+          <div><strong>${d.name}</strong></div>
+          <div>${d.hospital}</div>
+          <div>Fee: ₹${d.consultation_fee}</div>
+          <div class="mt-1">
+            <button class="btn btn-primary btn-sm btn-book-map" data-id="${d.id}">Book</button>
+          </div>
+        </div>`;
+      marker.bindPopup(html);
+      marker.on("popupopen", () => {
+        const btn = document.querySelector(".btn-book-map[data-id='" + d.id + "']");
+        if (btn) btn.addEventListener("click", () => openBookingModal(d));
+      });
+      mapMarkers.push(marker);
+      bounds.push([d.lat, d.lng]);
     });
+
+    if (bounds.length > 1) {
+      map.fitBounds(bounds, { padding: [30,30] });
+    } else {
+      map.setView(bounds[0], 14);
+    }
+
+    if (highlightDoctor) {
+      const mk = mapMarkers.find((_, i) => list[i].id === highlightDoctor.id);
+      if (mk) {
+        mk.openPopup();
+      }
+    }
   }
 
   // ---------- CARETAKERS ----------
   async function loadCaretakers() {
     try {
-      const res = await fetch('/get_caretakers');
+      const res = await fetch("/get_caretakers");
       const data = await res.json();
-      const caretakers = data?.caretakers || [];
-      renderCaretakersList(caretakers);
-    } catch (e) {
-      if (caretakersListEl) {
-        caretakersListEl.innerHTML = '<div class="error-message">Failed to load caretakers</div>';
-      }
-    }
-  }
+      const list = data?.caretakers || [];
+      if (!caretakersListEl) return;
 
-  function renderCaretakersList(list) {
-    if (!caretakersListEl) return;
-    if (!Array.isArray(list) || list.length === 0) {
-      caretakersListEl.innerHTML = '<div class="error-message">No caretakers found.</div>';
-      return;
-    }
-
-    const cards = list.map(c => `
-      <div class="doctor-card fade-in">
-        <div class="doctor-name">${c.name}</div>
-        <div class="doctor-info"><strong>Service:</strong> ${c.service_type}</div>
-        <div class="doctor-info"><strong>Experience:</strong> ${c.experience} yrs</div>
-        <div class="doctor-info"><strong>Rate:</strong> ₹${c.hourly_rate}/hr</div>
-        <div class="doctor-info"><strong>Phone:</strong> ${c.phone_number}</div>
-        <div class="mt-2">
-          <button class="btn btn-primary" onclick="window.open('tel:${c.phone_number}')">Contact</button>
-        </div>
-      </div>
-    `).join("");
-
-    caretakersListEl.innerHTML = `<div class="doctor-grid">${cards}</div>`;
-  }
-
-  // ---------- FAMILY MANAGEMENT ----------
-  async function loadFamilyMembers() {
-    try {
-      const res = await fetch('/get_family_members');
-      const data = await res.json();
-      
-      if (data.success === false) {
-        if (familyListEl) familyListEl.innerHTML = '<div class="error-message">Please register first</div>';
+      if (list.length === 0) {
+        caretakersListEl.innerHTML = `<div class="error-message">No caretakers found.</div>`;
         return;
       }
-      
-      const members = data?.family_members || [];
-      renderFamilyList(members);
-      updateEmergencyContacts(members);
+
+      caretakersListEl.innerHTML = `
+        ${list.map(c => `
+          <div class="doctor-card fade-in">
+            <div class="doctor-name">${c.name}</div>
+            <div class="doctor-info"><strong>Specialization:</strong> ${c.specialization}</div>
+            <div class="doctor-info"><strong>Experience:</strong> ${c.experience} yrs</div>
+            <div class="doctor-info"><strong>Rate:</strong> ₹${c.hourly_rate}/hour</div>
+            <div class="doctor-info"><strong>Phone:</strong> ${c.phone_number}</div>
+            <div class="mt-2">
+              <a class="btn btn-primary" href="tel:${c.phone_number}">Call</a>
+            </div>
+          </div>
+        `).join("")}
+      `;
     } catch (e) {
-      if (familyListEl) familyListEl.innerHTML = '<div class="error-message">Failed to load family members</div>';
+      caretakersListEl.innerHTML = `<div class="error-message">Failed to load caretakers.</div>`;
     }
   }
 
-  function renderFamilyList(members) {
-    if (!familyListEl) return;
-    
-    if (members.length === 0) {
-      familyListEl.innerHTML = '<div class="text-center text-muted">No family members added yet</div>';
-      return;
-    }
-
-    const cards = members.map(member => `
-      <div class="family-card">
-        <div class="family-member-name">${member.name}</div>
-        <div><strong>Relationship:</strong> ${member.relationship}</div>
-        <div><strong>Phone:</strong> ${member.phone_number}</div>
-        ${member.is_emergency_contact ? '<div class="badge bg-danger">Emergency Contact</div>' : ''}
-        <div class="mt-2">
-          <button class="btn btn-sm btn-primary" onclick="window.open('tel:${member.phone_number}')">Call</button>
-        </div>
-      </div>
-    `).join("");
-
-    familyListEl.innerHTML = cards;
-  }
-
-  function updateEmergencyContacts(members) {
-    if (!familyEmergencyEl) return;
-    
-    const emergencyContacts = members.filter(m => m.is_emergency_contact);
-    if (emergencyContacts.length === 0) return;
-
-    const contactsHTML = emergencyContacts.map(contact => `
-      <div class="mb-2">
-        <button type="button" class="btn btn-emergency emergency-call-btn" onclick="window.open('tel:${contact.phone_number}')">
-          <i class="fas fa-user"></i> ${contact.name} (${contact.relationship})
-        </button>
-      </div>
-    `).join("");
-
-    familyEmergencyEl.innerHTML = '<h4 class="mb-3">Family Emergency Contacts</h4>' + contactsHTML;
-  }
-
-  window.addFamilyMember = async function() {
-    const form = document.getElementById('family-form');
-    
-    if (!validateForm(form)) {
-      showErrorToast('Please fill all required fields correctly');
-      return;
-    }
-
-    const formData = new FormData(form);
-    const data = {
-      name: formData.get('name'),
-      phone_number: formData.get('phone_number'),
-      relationship: formData.get('relationship'),
-      is_emergency_contact: formData.get('is_emergency_contact') === 'on'
-    };
-
+  // ---------- FAMILY ----------
+  async function loadFamily() {
     try {
-      const res = await fetch('/add_family_member', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      });
+      const res = await fetch("/get_family_members");
+      const data = await res.json();
+      const list = data?.family_members || [];
 
-      const result = await res.json();
-      
-      if (result.success) {
-        showSuccessToast(result.message);
-        form.reset();
-        bootstrap.Modal.getInstance(document.getElementById('addFamilyModal')).hide();
-        loadFamilyMembers();
-      } else {
-        showErrorToast(result.message);
+      if (familyListEl) {
+        familyListEl.innerHTML = list.length ? list.map(m => `
+          <div class="family-card">
+            <div class="family-member-name">${m.name}</div>
+            <div>${m.relationship}</div>
+            <div>Phone: ${m.phone_number}</div>
+            ${m.is_emergency_contact ? `<div class="mt-2"><span class="success-message" style="display:inline-block">Emergency Contact</span></div>` : ""}
+          </div>
+        `).join("") : `<div class="text-muted">No family members yet.</div>`;
+      }
+
+      if (familyEmergencyEl) {
+        const emer = list.filter(m => m.is_emergency_contact);
+        familyEmergencyEl.innerHTML = emer.length ? emer.map(m => `
+          <div class="mb-2">
+            <a class="btn btn-emergency emergency-call-btn" href="tel:${m.phone_number}">
+              <i class="fas fa-phone"></i> Call ${m.name} (${m.relationship})
+            </a>
+          </div>
+        `).join("") : `<div class="text-muted">No family emergency contacts set.</div>`;
       }
     } catch (e) {
-      showErrorToast('Failed to add family member');
+      if (familyListEl) familyListEl.innerHTML = `<div class="error-message">Failed to load family.</div>`;
+    }
+  }
+
+  // Needed by the HTML modal's onclick
+  window.addFamilyMember = async function addFamilyMember() {
+    const form = document.getElementById("family-form");
+    const fd = new FormData(form);
+    const payload = {
+      name: fd.get("name")?.toString().trim(),
+      phone_number: fd.get("phone_number")?.toString().trim(),
+      relationship: fd.get("relationship"),
+      is_emergency_contact: !!fd.get("is_emergency_contact")
+    };
+    try {
+      const res = await fetch("/add_family_member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await loadFamily();
+        const modalEl = document.getElementById("addFamilyModal");
+        bootstrap.Modal.getInstance(modalEl)?.hide();
+        form.reset();
+      } else {
+        alert(data.message || "Failed to add member");
+      }
+    } catch {
+      alert("Failed to add member");
     }
   };
 
-  // ---------- SCREEN HANDLERS ----------
+  // ---------- SCREEN ENTER HOOK ----------
   function handleScreenEnter(index) {
-    if (index === FAMILY) {
-      loadFamilyMembers();
+    if (index === DOCTORS) {
+      // nothing; rendered by chat flow
+    } else if (index === MAP) {
+      renderMap(doctorsCache, selectedDoctor);
+    } else if (index === CARETAKER) {
+      loadCaretakers();
+    } else if (index === FAMILY) {
+      loadFamily();
+    } else if (index === EMERGENCY) {
+      loadFamily(); // to refresh emergency contact buttons
+      // attach tel: to static emergency buttons
+      document.querySelectorAll(".emergency-call-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const n = btn.getAttribute("data-number");
+          if (n) window.location.href = `tel:${n}`;
+        }, { once: true });
+      });
     }
   }
 
-  // ---------- EVENT LISTENERS ----------
-  
-  // Auto-transition from splash after 3 seconds
-  setTimeout(() => {
-    if (currentIndex === SPLASH) {
-      showScreen(REGISTER);
-    }
-  }, 3000);
+  // ---------- INIT SAMPLE DATA ----------
+  // Ensure doctors/caretakers data is present
+  fetch("/init_sample_data").catch(()=>{});
 
-  // Navigation buttons
-  backBtn?.addEventListener("click", () => {
+  // ---------- FLOW ----------
+  // splash → register after 5s
+  setTimeout(() => showScreen(REGISTER), 5000);
+
+  // Back/Next
+  nextBtn.addEventListener("click", () => {
+    if (currentIndex < screens.length - 1) showScreen(currentIndex + 1);
+  });
+  backBtn.addEventListener("click", () => {
     if (currentIndex > 0) showScreen(currentIndex - 1);
   });
 
-  nextBtn?.addEventListener("click", () => {
-    if (currentIndex < screens.length - 1) {
-      // Check if current screen requires validation
-      if (currentIndex === REGISTER && !formStates.register) {
-        showErrorToast(currentTranslations.error_fill_fields || 'Please fill all required fields');
+  // SOS + Family buttons on Register screen
+  if (sosBtn) sosBtn.addEventListener("click", () => jumpTo("emergency-screen"));
+  if (familyViewBtn) familyViewBtn.addEventListener("click", () => jumpTo("family-screen"));
+
+  // Registration submit → Language screen
+  if (registerForm) {
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const phone_number = document.getElementById("phone_number").value.trim();
+
+      if (!username || !phone_number) {
+        alert("Please enter both username and phone number");
         return;
       }
-      if (currentIndex === LANGUAGE && !formStates.language) {
-        showErrorToast('Please select a language');
-        return;
+      try {
+        const res = await fetch("/register", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ username, phone_number })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert("Registration successful!");
+          showScreen(LANGUAGE);
+        } else {
+          alert(data.message || "Registration failed.");
+        }
+      } catch {
+        alert("Something went wrong. Please try again.");
       }
-      showScreen(currentIndex + 1);
-    }
-  });
+    });
+  }
 
-  // Registration form
-  registerForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm(registerForm)) {
-      showErrorToast(currentTranslations.error_fill_fields || 'Please fill all required fields correctly');
-      return;
-    }
-
-    const formData = new FormData(registerForm);
-    const data = {
-      username: formData.get('username'),
-      phone_number: formData.get('phone_number')
-    };
-
-    try {
-      const res = await fetch('/register', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      });
-
-      const result = await res.json();
-      
-      if (result.success) {
-        formStates.register = true;
-        updateNavButtons();
-        showSuccessToast(currentTranslations.success_registered || result.message);
-        setTimeout(() => showScreen(LANGUAGE), 1000);
-      } else {
-        showErrorToast(result.message);
-      }
-    } catch (e) {
-      showErrorToast('Registration failed. Please try again.');
-    }
-  });
-
-  // Language selection
+  // Language selection → set language, update UI, go to Chat
   languageButtons.forEach(btn => {
     btn.addEventListener("click", async () => {
-      const lang = btn.dataset.lang;
-      
-      // Update UI
       languageButtons.forEach(b => b.classList.remove("selected"));
       btn.classList.add("selected");
-      
-      formStates.language = true;
-      updateNavButtons();
-      
-      await applyLanguage(lang);
+      await applyLanguage(btn.dataset.lang);
       updateRecognizerLang();
-      
-      setTimeout(() => showScreen(CHAT), 1000);
+      showScreen(CHAT);
+      // greeting
+      aiSay("Hello! Please describe your problem. I will ask a few quick questions and then suggest nearby doctors.");
     });
   });
 
-  // Chat form
-  chatForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-    const message = chatInput.value.trim();
-    if (!message) return;
-
-    addMessage("user", message);
-    chatInput.value = "";
-
-    if (triage.active) {
-      handleTriageAnswer(message);
-      return;
-    }
-
-    try {
-      const res = await fetch('/chat', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ message })
-      });
-
-      const data = await res.json();
-      
-      if (data.success) {
-        aiSay(data.response);
-        if (data.specialist) {
-          setTimeout(() => startTriage(data.specialist), 2000);
-        }
-      } else {
-        aiSay("Sorry, I couldn't process your message. Please try again.");
+  // Voice mic button
+  if (voiceBtn) {
+    voiceBtn.addEventListener("click", () => {
+      if (!recognizer) {
+        alert("Speech recognition not supported in this browser.");
+        return;
       }
-    } catch (e) {
-      aiSay("Sorry, there was an error. Please try again.");
-    }
-  });
-
-  // Voice button
-  voiceBtn?.addEventListener("click", () => {
-    if (recognizer) {
       try {
+        recognizer.lang = getLangCodeFor(currentLanguage);
         recognizer.start();
-      } catch (e) {
-        showErrorToast("Voice recognition failed");
+      } catch {
+        // ignore if already started
       }
-    }
-  });
+    });
+  }
 
-  // SOS and Family buttons
-  sosBtn?.addEventListener("click", () => jumpTo("emergency-screen"));
-  familyViewBtn?.addEventListener("click", () => jumpTo("family-screen"));
+  // Chat submit
+  if (chatForm) {
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = chatInput.value.trim();
+      if (!msg) return;
 
-  // Emergency call buttons
-  document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('emergency-call-btn')) {
-      const number = e.target.dataset.number;
-      if (number) {
-        window.open(`tel:${number}`);
+      addMessage("user", msg);
+      chatInput.value = "";
+
+      // If we're in triage, treat as answers
+      if (triage.active) {
+        handleTriageAnswer(msg);
+        return;
       }
-    }
-  });
 
-  // Booking confirmation
-  document.getElementById('confirmBooking')?.addEventListener('click', async () => {
-    if (!selectedDoctor || !selectedDate || !selectedTime) return;
-
-    try {
-      const res = await fetch('/book_appointment', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          doctor_id: selectedDoctor.id,
-          date: selectedDate,
-          time: selectedTime
-        })
-      });
-
-      const result = await res.json();
-      
-      if (result.success) {
-        showSuccessToast(result.message);
-        bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
-      } else {
-        showErrorToast(result.message);
+      // --- Symptom to Specialist mapping ---
+      const symptomMap = [
+        { keywords: ["leg pain", "legs pain", "knee pain", "joint pain", "bone", "fracture", "orthopedic", "orthopedician"], specialist: "Orthopedician" },
+        { keywords: ["heart", "chest pain", "cardio", "cardiologist", "palpitation"], specialist: "Cardiologist" },
+        { keywords: ["fever", "cold", "cough", "general", "physician"], specialist: "General Physician" },
+        { keywords: ["skin", "rash", "dermatologist", "itch", "acne"], specialist: "Dermatologist" },
+        { keywords: ["eye", "vision", "ophthalmologist", "blurry"], specialist: "Ophthalmologist" },
+        { keywords: ["child", "baby", "pediatrician", "pediatric"], specialist: "Pediatrician" },
+        { keywords: ["pregnancy", "gynecologist", "women", "period"], specialist: "Gynecologist" },
+        { keywords: ["diabetes", "sugar", "endocrinologist", "thyroid"], specialist: "Endocrinologist" },
+        { keywords: ["mental", "depression", "psychiatrist", "anxiety", "stress"], specialist: "Psychiatrist" }
+      ];
+      const lowerMsg = msg.toLowerCase();
+      let matchedSpecialist = null;
+      for (const entry of symptomMap) {
+        if (entry.keywords.some(k => lowerMsg.includes(k))) {
+          matchedSpecialist = entry.specialist;
+          break;
+        }
       }
-    } catch (e) {
-      showErrorToast('Booking failed. Please try again.');
-    }
-  });
+      if (matchedSpecialist) {
+        aiSay(`Based on your symptoms, I recommend consulting a ${matchedSpecialist}. Let me ask a few quick questions.`);
+        startTriage(matchedSpecialist);
+        return;
+      }
 
-  // Setup form validation
-  if (registerForm) setupFormValidation(registerForm, 'register');
+      // --- Fallback to server AI ---
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          aiSay("Sorry, I couldn't process that right now.");
+          return;
+        }
+        const reply = data.response;
+        const specialist = data.recommended_specialist || "General Physician";
+        aiSay(reply);
+        // Start triage then load doctors
+        startTriage(specialist);
+      } catch {
+        aiSay("Sorry, I couldn't connect to the server.");
+      }
+    });
+  }
 
-  // Initialize app
+  // ---------- INITIAL UI ----------
+  showScreen(SPLASH);
   setVoiceForLanguage(currentLanguage);
-  updateNavButtons();
 });

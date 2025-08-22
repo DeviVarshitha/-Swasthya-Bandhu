@@ -14,41 +14,10 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Flatpickr CSS for Calendar -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    
     <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
 </head>
 <body>
-
-    <!-- Toast Container for Success Messages -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
-        <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-success text-white">
-                <i class="fas fa-check-circle me-2"></i>
-                <strong class="me-auto">Success</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body" id="toastMessage">
-                <!-- Success message will be inserted here -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Error Toast -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9998">
-        <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-danger text-white">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong class="me-auto">Error</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body" id="errorToastMessage">
-                <!-- Error message will be inserted here -->
-            </div>
-        </div>
-    </div>
 
     <!-- Splash Screen -->
     <div id="splash-screen" class="screen active splash-screen">
@@ -66,12 +35,11 @@
         <div class="container">
             <h2 class="screen-title" data-translate="register">Register</h2>
             
-            <form id="register-form" novalidate>
+            <form id="register-form">
                 <div class="form-group">
                     <label for="username" class="form-label" data-translate="username">Username</label>
                     <input type="text" id="username" name="username" class="form-input" 
                            placeholder="Enter your username" data-translate="enter_username" required>
-                    <div class="invalid-feedback">Please enter a username</div>
                 </div>
                 
                 <div class="form-group">
@@ -79,7 +47,6 @@
                     <input type="tel" id="phone_number" name="phone_number" class="form-input" 
                            placeholder="Enter 10-digit phone number" data-translate="enter_phone" 
                            pattern="[0-9]{10}" maxlength="10" required>
-                    <div class="invalid-feedback">Please enter a valid 10-digit phone number</div>
                 </div>
                 
                 <button type="submit" class="btn btn-primary" data-translate="register">Register</button>
@@ -261,16 +228,14 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="family-form" novalidate>
+                    <form id="family-form">
                         <div class="form-group">
                             <label class="form-label" data-translate="name">Name</label>
                             <input type="text" name="name" class="form-input" required>
-                            <div class="invalid-feedback">Please enter a name</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label" data-translate="phone_number">Phone Number</label>
                             <input type="tel" name="phone_number" class="form-input" pattern="[0-9]{10}" maxlength="10" required>
-                            <div class="invalid-feedback">Please enter a valid 10-digit phone number</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label" data-translate="relationship">Relationship</label>
@@ -282,7 +247,6 @@
                                 <option value="sibling">Sibling</option>
                                 <option value="other">Other</option>
                             </select>
-                            <div class="invalid-feedback">Please select a relationship</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">
@@ -300,40 +264,8 @@
         </div>
     </div>
 
-    <!-- Enhanced Booking Modal with Calendar -->
-    <div class="modal fade" id="bookingModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Book Appointment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="bookingDoctorInfo" class="mb-3"></div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label" data-translate="select_date">Select Date</label>
-                            <input type="text" id="appointmentDate" class="form-control" placeholder="Select appointment date" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" data-translate="available_slots">Available Time Slots</label>
-                            <div id="timeSlots" class="mt-2"></div>
-                        </div>
-                    </div>
-                    
-                    <div id="bookingStatus" class="mt-3"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="confirmBooking" disabled>Confirm Booking</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Navigation Buttons (Hidden on splash screen) -->
-    <div class="navigation" id="navigation">
+    <!-- Navigation Buttons -->
+    <div class="navigation">
         <button type="button" class="nav-btn btn-secondary back-btn" data-translate="back">
             <i class="fas fa-arrow-left"></i> Back
         </button>
@@ -347,12 +279,8 @@
     
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Flatpickr JS for Calendar -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    
+
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='app.js') }}"></script>
-
 </body>
 </html>
